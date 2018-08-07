@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -11,32 +10,30 @@ import (
 	"github.com/fatih/color"
 )
 
-// Version TODO: Version
+// Version is the version of the plugin.
 var Version = plugin.VersionType{
 	Major: 1,
 	Minor: 0,
 	Build: 0,
 }
 
-// MinCliVersion TODO: MinCliVersion
+// MinCliVersion is the minimum version of the CF CLI
+// command line utility.
 var MinCliVersion = plugin.VersionType{
 	Major: 6,
 	Minor: 7,
 	Build: 0,
 }
 
-// CfCliDynatrace TODO: documentation
+// CfCliDynatrace is the class of this plugin
 type CfCliDynatrace struct{}
 
-func toJSON(v interface{}) string {
-	bytes, err := json.MarshalIndent(v, "", "  ")
-	if err != nil {
-		return err.Error()
-	}
-	return string(bytes)
-}
-
-// NewTenant TODO: documentation
+// NewTenant creates a new Tenant for accessing the Dynatrace REST API
+//
+// Parameters:
+// - credentials			for authenticating against the Dynatrace Tenant
+// - checkClusterVersion	if 'true' an initial check against the
+// 							GetClusterVersion API is being performed.
 func NewTenant(credentials Credentials, checkClusterVersion bool) (*dtcmd.Tenant, error) {
 	tenant := dtcmd.NewTenant(credentials.Environment, credentials.APIToken)
 
@@ -48,7 +45,15 @@ func NewTenant(credentials Credentials, checkClusterVersion bool) (*dtcmd.Tenant
 	return tenant, nil
 }
 
-// NewTenantPCF TODO: documentation
+// NewTenantPCF creates a new Tenant for accessing the Dynatrace REST API
+//
+// Parameters:
+// - credentials			for authenticating against the Dynatrace Tenant
+// - pcf					details about the PCF environment the user is currently
+//							logged into. This is information is being used for
+//							logging purposes.
+// - checkClusterVersion	if 'true' an initial check against the
+// 							GetClusterVersion API is being performed.
 func NewTenantPCF(credentials Credentials, pcf PCF, checkClusterVersion bool) (*dtcmd.Tenant, error) {
 	tenant := dtcmd.NewTenant(credentials.Environment, credentials.APIToken)
 	tenant.ActivityCallback = &cfActivityCallback{
@@ -66,7 +71,11 @@ func NewTenantPCF(credentials Credentials, pcf PCF, checkClusterVersion bool) (*
 	return tenant, nil
 }
 
-// ListWebApplications TODO: documentation
+// ListWebApplications prints out a tabular list of the currently
+// existing Web Applications in Dynatrace.
+//
+// Command Line Syntax:
+//		cf dynatrace list
 func (c *CfCliDynatrace) ListWebApplications(args []string) bool {
 	var err error
 	var tenant *dtcmd.Tenant
@@ -86,7 +95,10 @@ func (c *CfCliDynatrace) ListWebApplications(args []string) bool {
 	return true
 }
 
-// DeleteWebApplication TODO: documentation
+// DeleteWebApplication deletes a Web Application in Dynatrace
+//
+// Command Line Syntax:
+//		cf dynatrace delete <webapp>
 func (c *CfCliDynatrace) DeleteWebApplication(args []string) bool {
 	var err error
 	var tenant *dtcmd.Tenant
@@ -106,7 +118,18 @@ func (c *CfCliDynatrace) DeleteWebApplication(args []string) bool {
 	return true
 }
 
-// Bind Bind
+// Bind creates or updates a Dynatrace Web Application based on the
+// routes a PCF Application can get reached at.
+//
+// Command Line Syntax:
+//		cf dynatrace bind <app> [-name <webapp>]
+//
+// 			<app>		the name of the PCF application.
+//			<webapp>	the name Dynatrace Web Application.
+//							May contain the placeholders
+//								{cf:app}, {cf:space} and {cf:org}
+//							If not specified the name of the PCF Application
+//							is being used.
 func (c *CfCliDynatrace) Bind(cli plugin.CliConnection, args []string) bool {
 	var err error
 	var tenant *dtcmd.Tenant
@@ -127,7 +150,19 @@ func (c *CfCliDynatrace) Bind(cli plugin.CliConnection, args []string) bool {
 	return true
 }
 
-// Unbind TODO: documentation
+// Unbind removes the Application Detection Rules of a Dynatrace Web Application
+// that are matching with the corresponding PCF Application.
+// The Dynatrace Web Application won't get deleted.
+//
+// Command Line Syntax:
+//		cf dynatrace unbind <app> [-name <webapp>]
+//
+// 			<app>		the name of the PCF application.
+//			<webapp>	the name Dynatrace Web Application.
+//							May contain the placeholders
+//								{cf:app}, {cf:space} and {cf:org}
+//							If not specified the name of the PCF Application
+//							is being used.
 func (c *CfCliDynatrace) Unbind(cliConnection plugin.CliConnection, args []string) bool {
 	var err error
 	var tenant *dtcmd.Tenant
@@ -157,13 +192,13 @@ type cfActivityCallback struct {
 	cfUser  string
 }
 
-// var activityCallback = &cfActivityCallback{}
-
+// OnCreateWebApp prints out, in addition to the default activity callback of a tenant,
+// the PCF app, org and space when a web application is getting created.
 func (callback *cfActivityCallback) OnCreateWebApp(name string) {
 	log.Println("... creating web application ", log.Cyan(name), " for app ", log.Cyan(callback.cfApp), " in org ", log.Cyan(callback.cfOrg), " / space ", log.Cyan(callback.cfSpace), " as ", log.Cyan(callback.cfUser))
 }
 
-// Run TODO: documentation
+// Run this is how the plugin is actually getting invoked.
 func (c *CfCliDynatrace) Run(cliConnection plugin.CliConnection, args []string) {
 	// Ensure that we called the command dynatrace
 	command, args := argp.consume(args)
@@ -210,7 +245,7 @@ func (c *CfCliDynatrace) Run(cliConnection plugin.CliConnection, args []string) 
 	}
 }
 
-// GetMetadata TODO: documentation
+// GetMetadata Metadata about the plugin
 func (c *CfCliDynatrace) GetMetadata() plugin.PluginMetadata {
 	usage := []string{
 		"cf dynatrace bind <app> [-name <webapp>] [-environment <environmentID>] [-api-token <api-token>]",

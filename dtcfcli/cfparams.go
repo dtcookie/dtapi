@@ -120,6 +120,9 @@ type PCFDomainParams struct {
 //   - unless available as environment variable 'DT_ENVIRONMENT'
 // * -api-token <api-token>
 //   - unless available as environment variable 'DT_APITOKEN'
+//
+// In case the required arguments cannot get resolved this function
+// returns 'nil' after printing out an error message.
 func NewBaseParams(args []string) *BaseParams {
 	var err error
 	params := BaseParams{}
@@ -155,6 +158,9 @@ func NewBaseParams(args []string) *BaseParams {
 // * <webappname>
 //   - the name of the Dynatrace Web Application the operation
 //     is supposed to work against.
+//
+// In case the required arguments cannot get resolved this function
+// returns 'nil' after printing out an error message.
 func NewWebAppParams(args []string) *WebAppParams {
 	baseParams := NewBaseParams(args)
 	if baseParams == nil {
@@ -198,6 +204,9 @@ func NewWebAppParams(args []string) *WebAppParams {
 //     If specified via '-name <webapp>' the value may
 //     contain the placeholders '{cf:app}', '{cf:space}'
 //     and '{cf:org}' which will get automatically resolved.
+//
+// In case the required arguments cannot get resolved this function
+// returns 'nil' after printing out an error message.
 func NewPCFParams(cli plugin.CliConnection, args []string) *PCFParams {
 	baseParams := NewBaseParams(args)
 	if baseParams == nil {
@@ -263,6 +272,9 @@ func NewPCFParams(cli plugin.CliConnection, args []string) *PCFParams {
 //     If specified via '-name <webapp>' the value may
 //     contain the placeholders '{cf:app}', '{cf:space}'
 //     and '{cf:org}' which will get automatically resolved.
+//
+// In case the required arguments cannot get resolved this function
+// returns 'nil' after printing out an error message.
 func NewPCFDomainParams(cli plugin.CliConnection, args []string) *PCFDomainParams {
 	baseParams := NewPCFParams(cli, args)
 	if baseParams == nil {
