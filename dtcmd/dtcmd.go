@@ -56,4 +56,6 @@ func main() {
 	result, err := builder.Fetch()
 	fmt.Println(result)
 
+	asdf := tenant.APIs.CustomServices.Java.ForID("")
+	fmt.Println(asdf)
 }
