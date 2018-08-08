@@ -10,17 +10,33 @@ import (
 	log "github.com/dtcookie/dtapi/libdtlog"
 )
 
-// WebApplicationAPI TODO: documentation
-type WebApplicationAPI struct {
+// webApplicationAPI is a wrapper around the more general
+// WebApplicationConfigAPI offered via
+// "github.com/dtcookie/dtapi/libdtapiconf"
+//
+// Functionality is restricted to use cases limited to the ones
+// covered by current command line utilities.
+// Utilization is meant to be package internal by the public
+// functions of the Tenant object within this package.
+type webApplicationAPI struct {
 	tenant *Tenant
 	base   *dtapi.WebApplicationConfigAPI
 }
 
-// Exists TODO: documentation
-func (api *WebApplicationAPI) Exists(ID string) (bool, error) {
-	configStubs, _, err := api.base.ListConfigurations()
-	if err != nil {
-		return false, api.tenant.setLastError(err)
+// exists checks whether a web application exists with the given
+// unique identifier
+//
+// Parameters:
+//	- ID	the unique identifier of a Web Application
+// Returns:
+//	- bool	'true' if a Web Application with that ID exists,
+//			'false' otherwise
+func (api *webApplicationAPI) exists(ID string) (bool, error) {
+	var err error
+	var configStubs []dtapiconf.WebApplicationConfigStub
+
+	if configStubs, _, err = api.base.ListConfigurations(); err != nil {
+		return false, err
 	}
 	for _, configStub := range configStubs {
 		if configStub.Identifier == ID {
@@ -30,41 +46,56 @@ func (api *WebApplicationAPI) Exists(ID string) (bool, error) {
 	return false, nil
 }
 
-// NamedDelete TODO: documentation
-func (api *WebApplicationAPI) NamedDelete(name string) error {
-	configStubs, _, err := api.base.ListConfigurations()
-	if err != nil {
-		return api.tenant.setLastError(err)
+// namedDelete deletes the Web Application identified with the
+// given 'name', including any application detection rules for that
+// Web Application.
+//
+// Parameters:
+//	- name	the name of the Web Application. Its unique identifier
+//			will get resolved automatically
+func (api *webApplicationAPI) namedDelete(name string) error {
+	var err error
+	var configStubs []dtapiconf.WebApplicationConfigStub
+
+	if configStubs, _, err = api.base.ListConfigurations(); err != nil {
+		return err
 	}
 
 	for _, configStub := range configStubs {
 		fmt.Println(configStub.Name)
 		if name == configStub.Name {
-			return api.tenant.setLastError(api.Delete(configStub.Identifier, configStub.Name))
+			return api.delete(configStub.Identifier, configStub.Name)
 		}
 	}
 	log.Println("A web application with the name ", log.Cyan(name), " does not exist.")
-	return api.tenant.setLastError(nil)
+	return nil
 }
 
-// Delete TODO: documentation
-func (api *WebApplicationAPI) Delete(ID string, name string) error {
-	if err := api.tenant.ApplicationDetection.UnBind(ID, name); err != nil {
-		return api.tenant.setLastError(err)
+// delete deletes the Web Application identified with the
+// given 'ID', including any application detection rules for that
+// Web Application.
+//
+// Parameters:
+//	- ID	the unique identifier of the Web Application
+//	- name	the name of the Web Application (for logging purposes).
+func (api *webApplicationAPI) delete(ID string, name string) error {
+	var err error
+	if err = api.tenant.applicationDetection.unbind(ID, name); err != nil {
+		return err
 	}
 	log.Println("... deleting web application ", log.Cyan(name))
-	if _, err := api.base.ForID(ID).Delete(); err != nil {
-		return api.tenant.setLastError(err)
+	if _, err = api.base.ForID(ID).Delete(); err != nil {
+		return err
 	}
 	log.Println("... validating")
 	numAttempts := 0
 	for numAttempts = 0; numAttempts < 10; numAttempts++ {
-		exists, err := api.Exists(ID)
-		if err != nil {
-			return api.tenant.setLastError(err)
+		var exists bool
+		if exists, err = api.exists(ID); err != nil {
+			return err
 		}
 		if !exists {
-			return api.tenant.setLastError(nil)
+			return nil
 		}
 		time.Sleep(1 * time.Second)
 	}
@@ -72,25 +103,42 @@ func (api *WebApplicationAPI) Delete(ID string, name string) error {
 		log.Println(log.Yellow("WARNING"), " even after 10 seconds the deletion of the web application was not confirmed by the tenant.")
 	}
 
-	return api.tenant.setLastError(nil)
+	return nil
 }
 
-// Get TODO: documentation
-func (api *WebApplicationAPI) Get(ID string) (dtapiconf.WebApplicationConfig, error) {
+// get retrieves the detailed configuration for the Web Application identified
+// by the given 'ID'.
+//
+// In case such a Web Application does not exists a 404 Not Found error can be
+// expected. Therefore using this function requires a previous check for whether
+// that application actually exists.
+//
+// Parameters:
+// 	- ID	the unique identifier of the Web Application
+// Returns:
+//	- WebApplicationConfig	the configuration of the Web Application identified
+//							by the given 'ID'
+func (api *webApplicationAPI) get(ID string) (dtapiconf.WebApplicationConfig, error) {
 	return api.base.ForID(ID).Get()
 }
 
-// GetAll TODO: documentation
-func (api *WebApplicationAPI) GetAll() ([]dtapiconf.WebApplicationConfigStub, error) {
+// getAll retrieves name and unique identifier for all currently existing
+// Web Applications.
+//
+// Returns:
+//	- []WebApplicationConfigStub	a list of name/ID pairs
+func (api *webApplicationAPI) getAll() ([]dtapiconf.WebApplicationConfigStub, error) {
 	configStubs, _, err := api.base.ListConfigurations()
-	return configStubs, api.tenant.setLastError(err)
+	return configStubs, err
 }
 
-// List TODO: documentation
-func (api *WebApplicationAPI) List() error {
-	configStubs, _, err := api.base.ListConfigurations()
-	if err != nil {
-		return api.tenant.setLastError(err)
+// list prints out a tabular list of currently configured Web Applications
+func (api *webApplicationAPI) list() error {
+	var err error
+	var configStubs []dtapiconf.WebApplicationConfigStub
+
+	if configStubs, _, err = api.base.ListConfigurations(); err != nil {
+		return err
 	}
 
 	maxLen := 0
@@ -100,7 +148,7 @@ func (api *WebApplicationAPI) List() error {
 	maxLen = maxLen + 2
 
 	if len(configStubs) == 0 {
-		return api.tenant.setLastError(nil)
+		return nil
 	}
 
 	log.Println(log.Gray("name"), spc(maxLen-len("name")), log.Gray("real user monitoring"), spc(maxLen-len("real user monitoring")))
@@ -108,11 +156,15 @@ func (api *WebApplicationAPI) List() error {
 	for _, configStub := range configStubs {
 		log.Println(log.Cyan(configStub.Name), spc(maxLen-len(configStub.Name)), "on", spc(maxLen-len("on")))
 	}
-	return api.tenant.setLastError(nil)
+	return nil
 }
 
-// EnableRUM TODO: documentation
-func (api *WebApplicationAPI) EnableRUM(webAppConfig dtapiconf.WebApplicationConfig) error {
+// enableRUM checks whether the given Web Application has currently enabled RUM
+// Monitoring. If not, it is getting enabled.
+//
+// Parameters:
+//	- webAppConfig	the configuration of a previously fetched Web Application
+func (api *webApplicationAPI) enableRUM(webAppConfig dtapiconf.WebApplicationConfig) error {
 	if webAppConfig.RealUserMonitoringEnabled {
 		return nil
 	}
@@ -122,8 +174,22 @@ func (api *WebApplicationAPI) EnableRUM(webAppConfig dtapiconf.WebApplicationCon
 	return webAppAPI.CreateOrUpdate(webAppConfig)
 }
 
-// CreateFromDefault TODO: documentation
-func (api *WebApplicationAPI) CreateFromDefault(name string) (dtapiconf.WebApplicationConfig, error) {
+// createFromDefault creates a new Web Application with the given 'name'.
+//
+// As a template for the new Web Application the Default Web Application is
+// being used.
+//
+// This function expects that checks whether a Web Application with the given
+// name exists have already been done.
+// The creation won't fail, but the eventual name of the Web Application may
+// eventually differ from what has been requested.
+//
+// Parameters:
+//	- name	the name of the new Web Application
+// Returns:
+//	- WebApplicationConfig	the configuration of the Web Application that has been
+//							created.
+func (api *webApplicationAPI) createFromDefault(name string) (dtapiconf.WebApplicationConfig, error) {
 	var webAppConfig dtapiconf.WebApplicationConfig
 	var err error
 	if webAppConfig, err = api.base.Default.Get(); err != nil {

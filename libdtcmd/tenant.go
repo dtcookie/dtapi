@@ -8,79 +8,68 @@ import (
 	log "github.com/dtcookie/dtapi/libdtlog"
 )
 
-// Tenant TODO: documentation
+// Tenant is a wrapper around the Tenant object defined in
+// the package "github.com/dtcookie/dtapi/libdtapi".
+//
+// Functionality is reduced down to the use cases of current
+// command line utilities and cloud cli plugins.
 type Tenant struct {
-	ApplicationDetection *ApplicationDetectionAPI
-	WebApplications      *WebApplicationAPI
-	base                 *dtapi.Tenant
-	lastError            error
+	// ActivityCallback allows the user to override
+	// what is getting logged out during certain operations.
 	ActivityCallback     ActivityCallback
+	applicationDetection *applicationDetectionAPI
+	webApplications      *webApplicationAPI
+	base                 *dtapi.Tenant
 }
 
-// NewTenant TODO: documentation
-func NewTenant(environment string, apiToken string) *Tenant {
-	base := dtapi.NewTenant(environment, apiToken)
+// NewTenant creates a new Tenant object for accessing the
+// Dynatrace REST API.
+//
+// Parameters:
+// 	- credentials:	for authentication
+// Returns:
+//	- *Tenant	the fully initialized Tentant object
+func NewTenant(credentials Credentials) *Tenant {
+	base := dtapi.NewTenant(credentials.Environment, credentials.APIToken)
 	tenant := Tenant{}
 
-	tenant.ActivityCallback = &DefaultActivityCallback{}
+	tenant.ActivityCallback = &defaultActivityCallback{}
 	tenant.base = base
-	tenant.lastError = nil
 
-	appDetectionAPI := ApplicationDetectionAPI{}
+	appDetectionAPI := applicationDetectionAPI{}
 	appDetectionAPI.tenant = &tenant
 	appDetectionAPI.base = base.APIs.ApplicationDetection
-	tenant.ApplicationDetection = &appDetectionAPI
+	tenant.applicationDetection = &appDetectionAPI
 
-	webAppAPI := WebApplicationAPI{}
+	webAppAPI := webApplicationAPI{}
 	webAppAPI.tenant = &tenant
 	webAppAPI.base = base.APIs.WebApplications
-	tenant.WebApplications = &webAppAPI
+	tenant.webApplications = &webAppAPI
 
 	return &tenant
 }
 
-func (tenant *Tenant) setLastError(err error) error {
-	tenant.lastError = err
+// PrintClusterVersion prints out the cluster version of
+// the Dynatrace Tenant
+func (tenant *Tenant) PrintClusterVersion() error {
+	version, err := tenant.base.APIs.Cluster.Version()
+	fmt.Println("Dynatrace Cluster Version: " + version)
 	return err
 }
 
-// LogLastErr TODO: documentation
-func (tenant *Tenant) LogLastErr() bool {
-	if tenant.lastError != nil {
-		return log.FailError(tenant.lastError)
-	}
-	return true
-}
-
-// CheckClusterVersion TODO: documentation
-func (tenant *Tenant) CheckClusterVersion() error {
-	logVersion := false
-	version, err := tenant.base.APIs.Cluster.Version()
-	if err != nil {
-		return tenant.setLastError(err)
-	}
-	if logVersion {
-		fmt.Println("Dynatrace Cluster Version: " + version)
-	}
-	return tenant.setLastError(nil)
-}
-
-func (tenant *Tenant) resolveWebAppID(name string) (*string, error) {
-	var err error
-
-	var configStubs []dtapiconf.WebApplicationConfigStub
-	if configStubs, err = tenant.WebApplications.GetAll(); err != nil {
-		return nil, err
-	}
-	for _, configStub := range configStubs {
-		if configStub.Name == name {
-			return &configStub.Identifier, nil
-		}
-	}
-	return nil, nil
-}
-
-// UnBindWebApplication TODO: documentation
+// UnBindWebApplication deletes application detection rules
+// for the Web Application identified by the given name.
+//
+// Only application detection rules related to the given list
+// of domains will be removed.
+//
+// Parameters:
+//	- name		the name of the web application. Its identifier will
+//				get resolved using that name
+//	- domains	the domains the remaining application detection rules
+//				may not match against
+// Returns:
+//	- bool	'true' if there was an update necessary, 'false' otherwise
 func (tenant *Tenant) UnBindWebApplication(name string, domains []string) (bool, error) {
 	var err error
 
@@ -96,7 +85,7 @@ func (tenant *Tenant) UnBindWebApplication(name string, domains []string) (bool,
 	}
 
 	var appDetectionConfig dtapiconf.ApplicationDetectionConfig
-	if appDetectionConfig, err = tenant.ApplicationDetection.Get(); err != nil {
+	if appDetectionConfig, err = tenant.applicationDetection.get(); err != nil {
 		return false, err
 	}
 	remainingDetectionrules := make([]dtapiconf.ApplicationDetectionRule, 0)
@@ -112,20 +101,31 @@ func (tenant *Tenant) UnBindWebApplication(name string, domains []string) (bool,
 	}
 
 	appDetectionConfig.DetectionRules = remainingDetectionrules
-	if err = tenant.ApplicationDetection.base.Update(appDetectionConfig); err != nil {
+	if err = tenant.applicationDetection.base.Update(appDetectionConfig); err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
-// BindWebApplication BindWebApplication
+// BindWebApplication creates application detection rules for the Web Application
+// identified by the given 'webAppName', so that they cover the given 'domains'
+//
+// If the current application detection configuration already covers one of the given
+// domains, no additional application detection rule will be created.
+//
+// Parameters:
+//	- webAppName	the name of the Web Application. Its identifier will get resolved
+//					internally based on that name
+//	- domains		the domains to cover with the newly created application detection rules
+// Returns:
+//	- bool	'true' if there was an update necessary, 'false' otherwise
 func (tenant *Tenant) BindWebApplication(webAppName string, domains []string) (bool, error) {
 	var err error
 
 	var webAppConfig dtapiconf.WebApplicationConfig
 	foundConfig := false
 	var configStubs []dtapiconf.WebApplicationConfigStub
-	if configStubs, err = tenant.WebApplications.GetAll(); err != nil {
+	if configStubs, err = tenant.webApplications.getAll(); err != nil {
 		return false, err
 	}
 	webAppNamesByID := map[string]string{}
@@ -137,18 +137,18 @@ func (tenant *Tenant) BindWebApplication(webAppName string, domains []string) (b
 	var webAppID string
 	var ok bool
 	if webAppID, ok = webAppIdsByName[webAppName]; ok {
-		if webAppConfig, err = tenant.WebApplications.Get(webAppID); err != nil {
+		if webAppConfig, err = tenant.webApplications.get(webAppID); err != nil {
 			return false, err
 		}
 		foundConfig = true
 	}
 
 	var appDetectionConfig dtapiconf.ApplicationDetectionConfig
-	if appDetectionConfig, err = tenant.ApplicationDetection.Get(); err != nil {
+	if appDetectionConfig, err = tenant.applicationDetection.get(); err != nil {
 		return false, err
 	}
 
-	if matchingDetectionRule, matchingDomain := tenant.ApplicationDetection.FindBindingDetectionRule(appDetectionConfig.DetectionRules, domains, webAppID); matchingDetectionRule != nil {
+	if matchingDetectionRule, matchingDomain := tenant.applicationDetection.findBindingDetectionRule(appDetectionConfig.DetectionRules, domains, webAppID); matchingDetectionRule != nil {
 		log.Fail("the route ", log.Cyan(matchingDomain), " already matches a detection rule for web application ", log.Cyan(webAppNamesByID[matchingDetectionRule.ApplicationIdentifier]), ". (", matchingDetectionRule.FilterConfig.ApplicationMatchType, " ", matchingDetectionRule.FilterConfig.Pattern, ").")
 		log.Println("  remove that detection rule or run with ", log.Yellow("-f"), " to remove them automatically.")
 		return false, nil
@@ -156,28 +156,54 @@ func (tenant *Tenant) BindWebApplication(webAppName string, domains []string) (b
 
 	if !foundConfig {
 		tenant.ActivityCallback.OnCreateWebApp(webAppName)
-		if webAppConfig, err = tenant.WebApplications.CreateFromDefault(webAppName); err != nil {
+		if webAppConfig, err = tenant.webApplications.createFromDefault(webAppName); err != nil {
 			return false, err
 		}
 	} else {
-		if tenant.WebApplications.EnableRUM(webAppConfig) != nil {
+		if tenant.webApplications.enableRUM(webAppConfig) != nil {
 			return false, err
 		}
 	}
 
-	ok, err = tenant.ApplicationDetection.BindDomains(webAppConfig.Identifier, appDetectionConfig, domains)
+	ok, err = tenant.applicationDetection.bindDomains(webAppConfig.Identifier, appDetectionConfig, domains)
 	return true, err
 }
 
-// ActivityCallback TODO: documentation
-type ActivityCallback interface {
-	OnCreateWebApp(name string)
+// resolveWebAppID provides the identifier of a Web Application
+// if the only thing known about it is the name.
+//
+// While also the name of a Web Application is being kept unique
+// within a Tenant, it's not the identifier that is being used
+// in other configuration settings.
+//
+// Parameters:
+//	- name	the name of the Web Application
+// Returns:
+//	- *string	the identifier of the Web Application matching the
+//				given name or 'nil' if none could be found.
+func (tenant *Tenant) resolveWebAppID(name string) (*string, error) {
+	var err error
+
+	var configStubs []dtapiconf.WebApplicationConfigStub
+	if configStubs, err = tenant.webApplications.getAll(); err != nil {
+		return nil, err
+	}
+	for _, configStub := range configStubs {
+		if configStub.Name == name {
+			return &configStub.Identifier, nil
+		}
+	}
+	return nil, nil
 }
 
-type DefaultActivityCallback struct {
+// defaultActivityCallback is the default implementation of
+// the interface ActivityCallback
+type defaultActivityCallback struct {
 	ActivityCallback
 }
 
-func (callback *DefaultActivityCallback) OnCreateWebApp(name string) {
+// OnCreateWebApp simply logs out that a web application is about
+// to be created via REST
+func (callback *defaultActivityCallback) OnCreateWebApp(name string) {
 	log.Println("... creating web application ", log.Cyan(name))
 }
