@@ -48,14 +48,14 @@ func (api WebApplicationConfigByIDAPI) CreateOrUpdate(c dtapi.WebApplicationConf
 }
 
 /*
-DELETE Delete the web application configuration with the given id.
+Delete Delete the web application configuration with the given id.
 */
 func (api WebApplicationConfigByIDAPI) Delete() (bool, error) {
 	return check204(api.client.WebApplicationConfigApi.DeleteConfiguration1(nil, api.ID))
 }
 
 /*
-GET Get the web application configuration with the given id.
+Get Get the web application configuration with the given id.
  * @return WebApplicationConfig
 */
 func (api WebApplicationConfigByIDAPI) Get() (dtapi.WebApplicationConfig, error) {

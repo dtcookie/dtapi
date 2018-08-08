@@ -15,7 +15,7 @@ type DefaultWebApplicationConfigAPI struct {
 type DefaultWebApplicationDataPrivacySettingsAPI confService
 
 /*
-GET Retrieves the default web application configuration.
+Get Retrieves the default web application configuration.
 @return WebApplicationConfig
 */
 func (api DefaultWebApplicationConfigAPI) Get() (dtapi.WebApplicationConfig, error) {

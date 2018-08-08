@@ -38,12 +38,12 @@ func NewTenant(credentials Credentials) *Tenant {
 
 	appDetectionAPI := applicationDetectionAPI{}
 	appDetectionAPI.tenant = &tenant
-	appDetectionAPI.base = base.APIs.ApplicationDetection
+	appDetectionAPI.base = base.ApplicationDetection
 	tenant.applicationDetection = &appDetectionAPI
 
 	webAppAPI := webApplicationAPI{}
 	webAppAPI.tenant = &tenant
-	webAppAPI.base = base.APIs.WebApplications
+	webAppAPI.base = base.WebApplications
 	tenant.webApplications = &webAppAPI
 
 	return &tenant
@@ -52,7 +52,7 @@ func NewTenant(credentials Credentials) *Tenant {
 // PrintClusterVersion prints out the cluster version of
 // the Dynatrace Tenant
 func (tenant *Tenant) PrintClusterVersion() error {
-	version, err := tenant.base.APIs.Cluster.Version()
+	version, err := tenant.base.Cluster.Version()
 	fmt.Println("Dynatrace Cluster Version: " + version)
 	return err
 }
@@ -194,6 +194,22 @@ func (tenant *Tenant) resolveWebAppID(name string) (*string, error) {
 		}
 	}
 	return nil, nil
+}
+
+// ListWebApplications prints out a tabular list of currently configured Web Applications
+func (tenant *Tenant) ListWebApplications() error {
+	return tenant.webApplications.list()
+}
+
+// DeleteNamedWebApplication deletes the Web Application identified with the
+// given 'name', including any application detection rules for that
+// Web Application.
+//
+// Parameters:
+//	- name	the name of the Web Application. Its unique identifier
+//			will get resolved automatically
+func (tenant *Tenant) DeleteNamedWebApplication(name string) error {
+	return tenant.webApplications.namedDelete(name)
 }
 
 // defaultActivityCallback is the default implementation of

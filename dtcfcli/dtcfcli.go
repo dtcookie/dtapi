@@ -34,11 +34,11 @@ type CfCliDynatrace struct{}
 // - credentials			for authenticating against the Dynatrace Tenant
 // - checkClusterVersion	if 'true' an initial check against the
 // 							GetClusterVersion API is being performed.
-func NewTenant(credentials Credentials, checkClusterVersion bool) (*dtcmd.Tenant, error) {
-	tenant := dtcmd.NewTenant(credentials.Environment, credentials.APIToken)
+func NewTenant(credentials dtcmd.Credentials, checkClusterVersion bool) (*dtcmd.Tenant, error) {
+	tenant := dtcmd.NewTenant(credentials)
 
 	if checkClusterVersion {
-		if err := tenant.CheckClusterVersion(); err != nil {
+		if err := tenant.PrintClusterVersion(); err != nil {
 			return nil, err
 		}
 	}
@@ -54,8 +54,8 @@ func NewTenant(credentials Credentials, checkClusterVersion bool) (*dtcmd.Tenant
 //							logging purposes.
 // - checkClusterVersion	if 'true' an initial check against the
 // 							GetClusterVersion API is being performed.
-func NewTenantPCF(credentials Credentials, pcf PCF, checkClusterVersion bool) (*dtcmd.Tenant, error) {
-	tenant := dtcmd.NewTenant(credentials.Environment, credentials.APIToken)
+func NewTenantPCF(credentials dtcmd.Credentials, pcf PCF, checkClusterVersion bool) (*dtcmd.Tenant, error) {
+	tenant := dtcmd.NewTenant(credentials)
 	tenant.ActivityCallback = &cfActivityCallback{
 		cfApp:   pcf.App,
 		cfSpace: pcf.Space,
@@ -64,7 +64,7 @@ func NewTenantPCF(credentials Credentials, pcf PCF, checkClusterVersion bool) (*
 	}
 
 	if checkClusterVersion {
-		if err := tenant.CheckClusterVersion(); err != nil {
+		if err := tenant.PrintClusterVersion(); err != nil {
 			return nil, err
 		}
 	}
@@ -88,7 +88,7 @@ func (c *CfCliDynatrace) ListWebApplications(args []string) bool {
 	if tenant, err = NewTenant(params.Credentials, false); err != nil {
 		return log.FailError(err)
 	}
-	if err = tenant.WebApplications.List(); err != nil {
+	if err = tenant.ListWebApplications(); err != nil {
 		return log.FailError(err)
 	}
 
@@ -112,8 +112,8 @@ func (c *CfCliDynatrace) DeleteWebApplication(args []string) bool {
 		return log.FailError(err)
 	}
 
-	if tenant.WebApplications.NamedDelete(params.WebAppName) != nil {
-		return tenant.LogLastErr()
+	if err = tenant.DeleteNamedWebApplication(params.WebAppName); err != nil {
+		return log.FailError(err)
 	}
 	return true
 }
@@ -185,7 +185,6 @@ func (c *CfCliDynatrace) Unbind(cliConnection plugin.CliConnection, args []strin
 
 type cfActivityCallback struct {
 	dtcmd.ActivityCallback
-	dtcmd.DefaultActivityCallback
 	cfApp   string
 	cfOrg   string
 	cfSpace string

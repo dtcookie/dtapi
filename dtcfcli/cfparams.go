@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
+	dtcmd "github.com/dtcookie/dtapi/libdtcmd"
 	log "github.com/dtcookie/dtapi/libdtlog"
 )
 
@@ -33,7 +34,7 @@ type Flags struct {
 type BaseParams struct {
 	// Credentials for authenticating against the
 	// Dynatrace REST API
-	Credentials Credentials
+	Credentials dtcmd.Credentials
 	// Flags are optional arguments, but are not
 	// necessarily required in order for a command
 	// to execute
