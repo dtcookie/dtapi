@@ -9,7 +9,6 @@ environment/api/openapi.yaml
 environment/tests/tests.go
 dtcmd/credentials.json
 config/.openapi-generator/VERSION
-generate.cmd
 config/.openapi-generator-ignore
 config/.openapi-generator-ignore
 environment/.openapi-generator-ignore
