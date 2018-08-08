@@ -16,28 +16,28 @@ import (
 type CustomServicesAPI struct {
 	// Java offers Custom Services Configuration for
 	// for Java
-	Java *techCustomServicesAPI
+	Java *TechCustomServicesAPI
 	// DotNet offers Custom Services Configuration for
 	// for DotNet
-	DotNet *techCustomServicesAPI
+	DotNet *TechCustomServicesAPI
 	// PHP offers Custom Services Configuration for
 	// for PHP
-	PHP *techCustomServicesAPI
+	PHP *TechCustomServicesAPI
 }
 
 // NewCustomServicesAPI creates and initializes an object of type
 // CustomServicesAPI.
 // The properties 'Java', 'DotNet' and 'PHP' will be populated
 // with working APIs.
-func NewCustomServicesAPI(client *dtapi.APIClient) CustomServicesAPI {
-	return CustomServicesAPI{
+func newCustomServicesAPI(client *dtapi.APIClient) *CustomServicesAPI {
+	return &CustomServicesAPI{
 		Java:   newTechCustomServicesAPI("java", client),
 		DotNet: newTechCustomServicesAPI("dotNet", client),
 		PHP:    newTechCustomServicesAPI("php", client),
 	}
 }
 
-// techCustomServicesAPI offers functionality
+// TechCustomServicesAPI offers functionality
 // for Custom Service Configuration restricted
 // to a specific technology type.
 //
@@ -51,47 +51,47 @@ func NewCustomServicesAPI(client *dtapi.APIClient) CustomServicesAPI {
 // The property 'All' offers functionality
 // for batch processing restricted to that
 // specific technology type.
-type techCustomServicesAPI struct {
+type TechCustomServicesAPI struct {
 	confService
 	technology string
-	All        *techAllCustomServicesAPI
+	All        *TechAllCustomServicesAPI
 }
 
-func newTechCustomServicesAPI(technology string, client *dtapi.APIClient) *techCustomServicesAPI {
-	api := techCustomServicesAPI{technology: technology}
+func newTechCustomServicesAPI(technology string, client *dtapi.APIClient) *TechCustomServicesAPI {
+	api := TechCustomServicesAPI{technology: technology}
 	api.client = client
 	api.All = newTechAllCustomServicesAPI(technology, client)
 	return &api
 }
 
-// techAllCustomServicesAPI provides functionality
+// TechAllCustomServicesAPI provides functionality
 // for batch processing Custom Service Configuration
 // restricted to a specific technology type.
-type techAllCustomServicesAPI struct {
+type TechAllCustomServicesAPI struct {
 	confService
 	technology string
 }
 
-func newTechAllCustomServicesAPI(technology string, client *dtapi.APIClient) *techAllCustomServicesAPI {
-	api := techAllCustomServicesAPI{technology: technology}
+func newTechAllCustomServicesAPI(technology string, client *dtapi.APIClient) *TechAllCustomServicesAPI {
+	api := TechAllCustomServicesAPI{technology: technology}
 	api.client = client
 	return &api
 }
 
-// customServiceAPI offers functionality for
+// CustomServiceAPI offers functionality for
 // configuring a specific Custom Service
 // restricted down not only to a technology
 // but the actual unique identifier of this
 // Custom Service Config
-type customServiceAPI struct {
+type CustomServiceAPI struct {
 	confService
 	technology string
 	// the unique identifier of this custom service
 	ID string
 }
 
-func newCustomServiceAPI(technology string, ID string, client *dtapi.APIClient) *customServiceAPI {
-	api := customServiceAPI{technology: technology, ID: ID}
+func newCustomServiceAPI(technology string, ID string, client *dtapi.APIClient) *CustomServiceAPI {
+	api := CustomServiceAPI{technology: technology, ID: ID}
 	api.client = client
 	return &api
 }
@@ -99,12 +99,12 @@ func newCustomServiceAPI(technology string, ID string, client *dtapi.APIClient) 
 // ForID provides an API for configuring a specific
 // already existing Custom Service, such as deleting
 // or updating it.
-func (api *techCustomServicesAPI) ForID(ID string) *customServiceAPI {
+func (api *TechCustomServicesAPI) ForID(ID string) *CustomServiceAPI {
 	return newCustomServiceAPI(api.technology, ID, api.client)
 }
 
 // Delete deletes the custom service
-func (api *customServiceAPI) Delete() error {
+func (api *CustomServiceAPI) Delete() error {
 	_, err := api.client.CustomServicesApi.Delete(nil, api.technology, api.ID)
 	return err
 }
@@ -114,7 +114,7 @@ func (api *customServiceAPI) Delete() error {
 // 	- withProcessGroupReferences	if 'true' the resulting 'CustomService' object
 //									will be populated with references to process
 //									process groups.
-func (api *customServiceAPI) Get(withProcessGroupReferences bool) (dtapi.CustomService, error) {
+func (api *CustomServiceAPI) Get(withProcessGroupReferences bool) (dtapi.CustomService, error) {
 	result, _, err := api.client.CustomServicesApi.GetItem(nil, api.technology, api.ID, &dtapi.GetItemOpts{
 		IncludeProcessGroupReferences: optional.NewBool(withProcessGroupReferences),
 	})
@@ -127,7 +127,7 @@ func (api *customServiceAPI) Get(withProcessGroupReferences bool) (dtapi.CustomS
 // doesn't match this APIs ID, the update will fail.
 //
 // TODO: Perform ID check before sending the request.
-func (api *customServiceAPI) Update(c dtapi.CustomService) error {
+func (api *CustomServiceAPI) Update(c dtapi.CustomService) error {
 	_, err := api.client.CustomServicesApi.PutItem(nil, api.technology, api.ID, &dtapi.PutItemOpts{
 		CustomService: optional.NewInterface(c),
 	})
@@ -138,7 +138,7 @@ func (api *customServiceAPI) Update(c dtapi.CustomService) error {
 // the technology type of this specific API.
 //
 // Process Group References will be populated in the response optionally.
-func (api *techAllCustomServicesAPI) Get(withProcessGroupReferences bool) ([]dtapi.CustomService, error) {
+func (api *TechAllCustomServicesAPI) Get(withProcessGroupReferences bool) ([]dtapi.CustomService, error) {
 	result, _, err := api.client.CustomServicesApi.GetList(nil, api.technology, &dtapi.GetListOpts{
 		IncludeProcessGroupReferences: optional.NewBool(withProcessGroupReferences),
 	})
@@ -150,7 +150,7 @@ func (api *techAllCustomServicesAPI) Get(withProcessGroupReferences bool) ([]dta
 //
 // NOTE:	This update affects ALL the Custom Services for this technology.
 //			A Custom Service not present in the specified service list is going to get deleted!
-func (api *techAllCustomServicesAPI) Update(services []dtapi.CustomService) error {
+func (api *TechAllCustomServicesAPI) Update(services []dtapi.CustomService) error {
 	_, err := api.client.CustomServicesApi.PutList(nil, api.technology, &dtapi.PutListOpts{
 		CustomServiceList: optional.NewInterface(dtapi.CustomServiceList{
 			CustomServices: services,
@@ -165,7 +165,7 @@ func (api *techAllCustomServicesAPI) Update(services []dtapi.CustomService) erro
 // NOTE:	Similar to the function 'Update' this validation is also assuming
 //			that the specified service list covers ALL the services that are supposed
 //			to be configured for the technology type this API is related to.
-func (api *techAllCustomServicesAPI) Validate(services []dtapi.CustomService) error {
+func (api *TechAllCustomServicesAPI) Validate(services []dtapi.CustomService) error {
 	_, err := api.client.CustomServicesApi.ValidateList(nil, api.technology, &dtapi.ValidateListOpts{
 		CustomServiceList: optional.NewInterface(dtapi.CustomServiceList{
 			CustomServices: services,
@@ -180,7 +180,7 @@ func (api *techAllCustomServicesAPI) Validate(services []dtapi.CustomService) er
 // NOTE:	You must not specify the IDs for the custom service or any of its rules.
 //
 // TODO:	Perform the check for populated IDs offline before sending the request.
-func (api techCustomServicesAPI) Create(c dtapi.CustomService) error {
+func (api *TechCustomServicesAPI) Create(c dtapi.CustomService) error {
 	_, err := api.client.CustomServicesApi.Post(nil, api.technology, &dtapi.PostOpts{
 		CustomService: optional.NewInterface(c),
 	})
@@ -189,7 +189,7 @@ func (api techCustomServicesAPI) Create(c dtapi.CustomService) error {
 
 // Validate allows for validating the correctness of a Custom Service before
 // invoking the actual Create
-func (api techCustomServicesAPI) Validate(service dtapi.CustomService) error {
+func (api *TechCustomServicesAPI) Validate(service dtapi.CustomService) error {
 	_, err := api.client.CustomServicesApi.ValidateItem(nil, api.technology, &dtapi.ValidateItemOpts{
 		CustomService: optional.NewInterface(service),
 	})

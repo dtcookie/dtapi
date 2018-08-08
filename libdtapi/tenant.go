@@ -2,21 +2,21 @@ package dtapi
 
 // Tenant TODO: comment
 type Tenant struct {
-	Cluster              ClusterAPI
+	Cluster              *ClusterAPI
 	Anonymization        *AnonymizationAPI
-	Events               EventAPI
-	MaintenanceWindows   MaintenanceWindowAPI
-	Problems             ProblemAPI
-	Synthetic            SyntheticAPI
-	Thresholds           ThresholdAPI
-	Timeseries           TimeseriesAPI
-	Topology             TopologyAPI
-	AnomalyDetection     AnomalyDetectionAPI
+	Events               *EventAPI
+	MaintenanceWindows   *MaintenanceWindowAPI
+	Problems             *ProblemAPI
+	Synthetic            *SyntheticAPI
+	Thresholds           *ThresholdAPI
+	Timeseries           *TimeseriesAPI
+	Topology             *TopologyAPI
+	AnomalyDetection     *AnomalyDetectionAPI
 	ApplicationDetection *ApplicationDetectionConfigAPI
-	CustomServices       CustomServicesAPI
-	DataPrivacy          DataPrivacyAPI
-	RequestAttributes    RequestAttributesAPI
-	UserSessionQL        UserSessionQLAPI
+	CustomServices       *CustomServicesAPI
+	DataPrivacy          *DataPrivacyAPI
+	RequestAttributes    *RequestAttributesAPI
+	UserSessionQL        *UserSessionQLAPI
 	WebApplications      *WebApplicationConfigAPI
 }
 
@@ -40,43 +40,43 @@ func NewTenant(environment string, apiToken string) *Tenant {
 	anonymization.client = envClient
 
 	return &Tenant{
-		Cluster: ClusterAPI{
+		Cluster: &ClusterAPI{
 			client: envClient,
 		},
 		Anonymization: &anonymization,
-		Events: EventAPI{
+		Events: &EventAPI{
 			client: envClient,
 		},
-		MaintenanceWindows: MaintenanceWindowAPI{
+		MaintenanceWindows: &MaintenanceWindowAPI{
 			client: envClient,
 		},
-		Problems: ProblemAPI{
+		Problems: &ProblemAPI{
 			client: envClient,
 		},
-		Synthetic: SyntheticAPI{
+		Synthetic: &SyntheticAPI{
 			client: envClient,
 		},
-		Thresholds: ThresholdAPI{
+		Thresholds: &ThresholdAPI{
 			client: envClient,
 		},
-		Timeseries: TimeseriesAPI{
+		Timeseries: &TimeseriesAPI{
 			client: envClient,
 		},
-		Topology: NewTopologyAPI(envClient),
-		AnomalyDetection: AnomalyDetectionAPI{
+		Topology: newTopologyAPI(envClient),
+		AnomalyDetection: &AnomalyDetectionAPI{
 			client: confClient,
 		},
 		ApplicationDetection: &ApplicationDetectionConfigAPI{
 			client: confClient,
 		},
-		CustomServices: NewCustomServicesAPI(confClient),
-		DataPrivacy: DataPrivacyAPI{
+		CustomServices: newCustomServicesAPI(confClient),
+		DataPrivacy: &DataPrivacyAPI{
 			client: confClient,
 		},
-		RequestAttributes: RequestAttributesAPI{
+		RequestAttributes: &RequestAttributesAPI{
 			client: confClient,
 		},
-		UserSessionQL: UserSessionQLAPI{
+		UserSessionQL: &UserSessionQLAPI{
 			client: envClient,
 		},
 		WebApplications: &webAppConfigAPI,

@@ -5,68 +5,56 @@ import (
 	dtapi "github.com/dtcookie/dtapi/libdtapiconf"
 )
 
-// DefaultWebApplicationConfigAPI TODO: documentation
+// DefaultWebApplicationConfigAPI grants access and allows
+// for modification of the configuration of the
+// Default Web Application
 type DefaultWebApplicationConfigAPI struct {
 	confService
+	// DataPrivacySettings grants access and allows for modification
+	// of the Data Privacy Settings of the Default Web Application
 	DataPrivacySettings DefaultWebApplicationDataPrivacySettingsAPI
 }
 
-// DefaultWebApplicationDataPrivacySettingsAPI TODO: documentation
+// DefaultWebApplicationDataPrivacySettingsAPI grants access
+// and allows for modification of the Data Privacy Settings of the
+// Default Web Application
 type DefaultWebApplicationDataPrivacySettingsAPI confService
 
-/*
-Get Retrieves the default web application configuration.
-@return WebApplicationConfig
-*/
+// Get Retrieves the default web application configuration.
 func (api DefaultWebApplicationConfigAPI) Get() (dtapi.WebApplicationConfig, error) {
 	result, _, err := api.client.WebApplicationConfigApi.GetDefaultApplication1(nil)
 	return result, err
 }
 
-/*
-CreateOrUpdate Update the default web application configuration.
- * @param c dtapi.WebApplicationConfig
-*/
-func (api DefaultWebApplicationConfigAPI) CreateOrUpdate(c dtapi.WebApplicationConfig) (bool, error) {
+// Update updates the default web application configuration.
+func (api DefaultWebApplicationConfigAPI) Update(c dtapi.WebApplicationConfig) (bool, error) {
 	return check204(api.client.WebApplicationConfigApi.CreateOrUpdateDefaultConfiguration1(nil, &dtapi.CreateOrUpdateDefaultConfiguration1Opts{
 		WebApplicationConfig: optional.NewInterface(c),
 	}))
 }
 
-/*
-IsValid Validates new default web application configuration for the `PUT /default` request.
- * @param c dtapi.WebApplicationConfig
-*/
+// IsValid validates new default web application configuration for the `PUT /default` request.
 func (api DefaultWebApplicationConfigAPI) IsValid(c dtapi.WebApplicationConfig) (bool, error) {
 	return check204(api.client.WebApplicationConfigApi.ValidateDefaultConfiguration1(nil, &dtapi.ValidateDefaultConfiguration1Opts{
 		WebApplicationConfig: optional.NewInterface(c),
 	}))
 }
 
-/*
-GET Retrieves the default web application's data privacy settings.
-@return ApplicationDataPrivacy
-*/
-func (api DefaultWebApplicationDataPrivacySettingsAPI) GET() (dtapi.ApplicationDataPrivacy, error) {
+// Get retrieves the default web application's data privacy settings.
+func (api DefaultWebApplicationDataPrivacySettingsAPI) Get() (dtapi.ApplicationDataPrivacy, error) {
 	result, _, err := api.client.WebApplicationConfigApi.GetDefaultApplicationDataPrivacySettings1(nil)
 	return result, err
 }
 
-/*
-Update Update the default web application's data privacy settings.
- * @param c dtapi.ApplicationDataPrivacy
-*/
+// Update updates the default web application's data privacy settings.
 func (api DefaultWebApplicationDataPrivacySettingsAPI) Update(c dtapi.ApplicationDataPrivacy) (bool, error) {
 	return check204(api.client.WebApplicationConfigApi.UpdateDefaultApplicationDataPrivacySettings1(nil, &dtapi.UpdateDefaultApplicationDataPrivacySettings1Opts{
 		ApplicationDataPrivacy: optional.NewInterface(c),
 	}))
 }
 
-/*
-isValid Validates new data privacy settings for the `PUT /default/dataPrivacy` request.
- * @param optional nil or *ValidateDefaultApplicationDataPrivacySettings1Opts - Optional Parameters:
- * @param "ApplicationDataPrivacy" (optional.Interface of ApplicationDataPrivacy) -
-*/
+// isValid allows for validating the payload for updating the Default Web Application's Data Privacy Settings
+// without actually invoking the Update.
 func (api DefaultWebApplicationDataPrivacySettingsAPI) isValid(c dtapi.ApplicationDataPrivacy) (bool, error) {
 	return check204(api.client.WebApplicationConfigApi.ValidateDefaultApplicationDataPrivacySettings1(nil, &dtapi.ValidateDefaultApplicationDataPrivacySettings1Opts{
 		ApplicationDataPrivacy: optional.NewInterface(c),

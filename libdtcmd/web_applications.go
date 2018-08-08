@@ -171,7 +171,7 @@ func (api *webApplicationAPI) enableRUM(webAppConfig dtapiconf.WebApplicationCon
 	log.Println("... enabling real user monitoring")
 	webAppConfig.RealUserMonitoringEnabled = true
 	webAppAPI := api.base.ForID(webAppConfig.Identifier)
-	return webAppAPI.CreateOrUpdate(webAppConfig)
+	return webAppAPI.Update(webAppConfig)
 }
 
 // createFromDefault creates a new Web Application with the given 'name'.

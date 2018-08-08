@@ -5,38 +5,39 @@ import (
 	dtapi "github.com/dtcookie/dtapi/libdtapienv"
 )
 
-// TopologyAPI TODO: documentation
+// TopologyAPI is a convenience wrapper around
+// the Services offered via
+// "github.com/dtcookie/dtapi/libdtapienv" related to
+// the Smartscape API
 type TopologyAPI struct {
 	envService
-	Applications  TopologyApplicationAPI
-	Hosts         TopologyHostAPI
+	// Applications offers functionality to query for and update Applications
+	Applications TopologyApplicationAPI
+	// Hosts offers functionality to query for and update Hosts
+	Hosts TopologyHostAPI
+	// ProcessGroups offers functionality to query for and update ProcessGroups
 	ProcessGroups TopologyProcessGroupAPI
-	Processes     TopologyProcessesAPI
-	Services      TopologyServiceAPI
+	// Processes offers functionality to query for and update Processes
+	Processes TopologyProcessesAPI
+	// Services offers functionality to query for and update Services
+	Services TopologyServiceAPI
 }
 
-// NewTopologyAPI TODO: documentation
-func NewTopologyAPI(client *dtapi.APIClient) TopologyAPI {
-	api := TopologyAPI{}
-	api.client = client
-	api.Applications = NewTopologyApplicationAPI(client)
-	api.Hosts = NewTopologyHostAPI(client)
-	api.ProcessGroups = NewTopologyProcessGroupAPI(client)
-	api.Processes = NewTopologyProcessesAPI(client)
-	api.Services = NewTopologyServiceAPI(client)
-	return api
-}
-
-/*
-CreateCustomDataPoints Creates/updates a custom device, or reports metric data points to the custom device.
- * @param entityAlias ID of the custom device.   If you use the ID of an existing device, the respective parameters will be updated.
- * @param optional nil or *CreateCustomDataPointsOpts - Optional Parameters:
- * @param "CustomDevicePushMessage" (optional.Interface of CustomDevicePushMessage) -  JSON body of the request containing entity's parameters.
-@return CustomDevicePushResult
-*/
-func (api TopologyAPI) CreateCustomDataPoints(entityAlias string, pushMessage dtapi.CustomDevicePushMessage) (dtapi.CustomDevicePushResult, error) {
+// CreateCustomDataPoints creates/updates a custom device, or reports metric data points to the custom device.
+func (api *TopologyAPI) CreateCustomDataPoints(entityAlias string, pushMessage dtapi.CustomDevicePushMessage) (dtapi.CustomDevicePushResult, error) {
 	result, _, err := api.client.TopologySmartscapeCustomDeviceApi.CreateCustomDataPoints(nil, entityAlias, &dtapi.CreateCustomDataPointsOpts{
 		CustomDevicePushMessage: optional.NewInterface(pushMessage),
 	})
 	return result, err
+}
+
+func newTopologyAPI(client *dtapi.APIClient) *TopologyAPI {
+	api := TopologyAPI{}
+	api.client = client
+	api.Applications = newTopologyApplicationAPI(client)
+	api.Hosts = newTopologyHostAPI(client)
+	api.ProcessGroups = newTopologyProcessGroupAPI(client)
+	api.Processes = newTopologyProcessesAPI(client)
+	api.Services = newTopologyServiceAPI(client)
+	return &api
 }

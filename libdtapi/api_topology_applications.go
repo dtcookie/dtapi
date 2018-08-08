@@ -5,51 +5,36 @@ import (
 	dtapi "github.com/dtcookie/dtapi/libdtapienv"
 )
 
-// TopologyApplicationAPI TODO: documentation
+// TopologyApplicationAPI is a convenience wrapper around
+// the Services offered via
+// "github.com/dtcookie/dtapi/libdtapienv" related to
+// Smartscape Topology
 type TopologyApplicationAPI envService
 
 // NewTopologyApplicationAPI TODO: documentation
-func NewTopologyApplicationAPI(client *dtapi.APIClient) TopologyApplicationAPI {
+func newTopologyApplicationAPI(client *dtapi.APIClient) TopologyApplicationAPI {
 	api := TopologyApplicationAPI{}
 	api.client = client
 	return api
 }
 
-/*
-CreateQuery Gets the list of all applications in your environment along with their parameters
-You can optionally specify timeframe, to filter the output only to applications, active in specified time.
- * @param optional nil or *GetApplicationsOpts - Optional Parameters:
- * @param "StartTimestamp" (optional.Int64) -  Start timestamp of the requested timeframe, in milliseconds (UTC).   If no timeframe specified the 72 hours behind from now is used.
- * @param "EndTimestamp" (optional.Int64) -  End timestamp of the requested timeframe, in milliseconds (UTC).   If no timeframe specified then now is used.
- * @param "RelativeTime" (optional.String) -  Relative timeframe, back from now.
- * @param "Tag" (optional.Interface of []string) -  Filters the resulting set of applications by the specified tag.    An application has to match ALL specified tags.
- * @param "Entity" (optional.Interface of []string) -  Only return specified applications.
-@return []Application
-*/
-func (api TopologyApplicationAPI) CreateQuery() *GetApplicationsBuilder {
-	return &GetApplicationsBuilder{
+// CreateQuery creates a builder object to conveniently parameterize a query for applications.
+func (api TopologyApplicationAPI) CreateQuery() GetApplicationsBuilder {
+	return &getApplicationsBuilder{
 		client: api.client,
 		opts:   dtapi.GetApplicationsOpts{},
 	}
 }
 
-/*
-GET Gets parameters of the specified application
- * @param entityID Dynatrace entity ID of the application you're inquiring.   You can find them in the URL of the corresponding application page, for example, `APPLICATION-007`.
-@return Application
-*/
-func (api TopologyApplicationAPI) GET(entityID string) (dtapi.Application, error) {
-	result, _, err := api.client.TopologySmartscapeApplicationApi.GetSingleApplication(nil, entityID)
+// Get Gets parameters of the specified application
+func (api TopologyApplicationAPI) Get(ID string) (dtapi.Application, error) {
+	result, _, err := api.client.TopologySmartscapeApplicationApi.GetSingleApplication(nil, ID)
 	return result, err
 }
 
-/*
-UPDATE Updates parameters of the specified application
- * @param entityID Dynatrace entity ID of the application to be updated.   You can find them in the URL of the corresponding application page, for example, `APPLICATION-007`.
- * @param tags []string
-*/
-func (api TopologyApplicationAPI) UPDATE(entityID string, tags []string) error {
-	_, err := api.client.TopologySmartscapeApplicationApi.UpdateApplication(nil, entityID, &dtapi.UpdateApplicationOpts{
+// Update updates parameters of the specified application
+func (api TopologyApplicationAPI) Update(ID string, tags []string) error {
+	_, err := api.client.TopologySmartscapeApplicationApi.UpdateApplication(nil, ID, &dtapi.UpdateApplicationOpts{
 		UpdateEntity: optional.NewInterface(dtapi.UpdateEntity{
 			Tags: tags,
 		}),

@@ -8,7 +8,6 @@ import (
 	"github.com/fatih/color"
 )
 
-// ColorSection TODO: documentation
 type colorized struct {
 	fmt.Stringer
 	color *color.Color
@@ -20,7 +19,6 @@ func (c colorized) String() string {
 	return ""
 }
 
-// Cyan TODO: documentation
 func Cyan(text string) colorized {
 	return colorized{
 		color: color.New(color.FgCyan, color.Bold),
@@ -28,7 +26,6 @@ func Cyan(text string) colorized {
 	}
 }
 
-// Red TODO: documentation
 func Red(text string) colorized {
 	return colorized{
 		color: color.New(color.FgRed, color.Bold),
@@ -36,7 +33,6 @@ func Red(text string) colorized {
 	}
 }
 
-// Green TODO: documentation
 func Green(text string) colorized {
 	return colorized{
 		color: color.New(color.FgGreen, color.Bold),
@@ -44,7 +40,6 @@ func Green(text string) colorized {
 	}
 }
 
-// Gray TODO: documentation
 func Gray(text string) colorized {
 	return colorized{
 		color: color.New(color.FgHiBlack, color.Bold),
@@ -52,7 +47,6 @@ func Gray(text string) colorized {
 	}
 }
 
-// Yellow TODO: documentation
 func Yellow(text string) colorized {
 	return colorized{
 		color: color.New(color.FgYellow, color.Bold),
@@ -60,7 +54,6 @@ func Yellow(text string) colorized {
 	}
 }
 
-// Println TODO: documentation
 func Println(v ...interface{}) {
 	for _, value := range v {
 		fmt.Print(value)
@@ -68,12 +61,10 @@ func Println(v ...interface{}) {
 	fmt.Println()
 }
 
-// FAILED TODO: documentation
 func FAILED() {
 	Println(Red("FAILED"))
 }
 
-// Fail TODO: documentation
 func Fail(v ...interface{}) bool {
 	FAILED()
 	for _, value := range v {
@@ -83,7 +74,6 @@ func Fail(v ...interface{}) bool {
 	return false
 }
 
-// FailErrorEnvelope TODO: documentation
 func FailErrorEnvelope(errEnv *dtapiconf.ErrorEnvelope) bool {
 	err := errEnv.Error
 	Fail("Status Code: ", Red(fmt.Sprintf("%d", err.Code)))
@@ -96,7 +86,6 @@ func FailErrorEnvelope(errEnv *dtapiconf.ErrorEnvelope) bool {
 	return false
 }
 
-// FailConfGenericOpenAPIError TODO: documentation
 func FailConfGenericOpenAPIError(err *dtapiconf.GenericOpenAPIError) bool {
 	model := err.Model()
 	switch errEnv := model.(type) {
@@ -107,12 +96,10 @@ func FailConfGenericOpenAPIError(err *dtapiconf.GenericOpenAPIError) bool {
 	}
 }
 
-// FailEnvGenericOpenAPIError TODO: documentation
 func FailEnvGenericOpenAPIError(err *dtapienv.GenericOpenAPIError) bool {
 	return Fail(err.Error())
 }
 
-// FailError TODO: documentation
 func FailError(err error) bool {
 	switch goaerr := err.(type) {
 	case dtapiconf.GenericOpenAPIError:

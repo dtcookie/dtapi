@@ -9,7 +9,7 @@ type ClusterAPI envService
 
 // ClusterTime retrieves the current cluster time of the
 // Tenant in UTC milliseconds.
-func (api ClusterAPI) ClusterTime() (int64, error) {
+func (api *ClusterAPI) ClusterTime() (int64, error) {
 	var err error
 	var clusterTime int64
 
@@ -21,7 +21,7 @@ func (api ClusterAPI) ClusterTime() (int64, error) {
 
 // Version retrieves the current cluster version of the
 // Tenant.
-func (api ClusterAPI) Version() (string, error) {
+func (api *ClusterAPI) Version() (string, error) {
 	var err error
 	var version dtapienv.ClusterVersion
 
