@@ -274,6 +274,7 @@ func NewPCFDomainParams(cli plugin.CliConnection, args []string) *PCFDomainParam
 	params.Flags = baseParams.Flags
 
 	params.PCF = baseParams.PCF
+	params.WebAppName = baseParams.WebAppName
 
 	if resolveDomains(&params, cli) {
 		return &params
