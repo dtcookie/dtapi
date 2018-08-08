@@ -5,72 +5,91 @@ import (
 	dtapi "github.com/dtcookie/dtapi/libdtapienv"
 )
 
-// MaintenanceWindowAPI TODO: documentation
+// MaintenanceWindowAPI is a convenience wrapper around
+// the Services offered via
+// "github.com/dtcookie/dtapi/libdtapienv" related to
+// configuring Maintenance Windows
 type MaintenanceWindowAPI envService
 
-// MaintenanceWindowQueryBuilder TODO: documentation
-type MaintenanceWindowQueryBuilder struct {
-	client *dtapi.APIClient
-	opts   dtapi.GetAllMaintenanceWindowConfigsOpts
+// MaintenanceWindowQueryBuilder allows for conveniently
+// specifying optional arguments when querying for
+// Maintenance Windows.
+type MaintenanceWindowQueryBuilder interface {
+	// Get retrieves the configuration of all currently configured
+	// Maintenance Windows
+	Get() ([]dtapi.MaintenanceWindow, error)
+	// WithStartTimeStamp is the start timestamp of the inquiry timeframe, in UTC milliseconds.
+	// If 0 or missing, the current time is used.
+	WithStartTimeStamp(timeStamp int64) MaintenanceWindowQueryBuilder
+	// WithEndTimeStamp is the end timestamp of the inquiry timeframe, in UTC milliseconds.
+	// If 0 or missing, all maintenance windows beginning after the `from` timestamp will be returned.
+	WithEndTimeStamp(timeStamp int64) MaintenanceWindowQueryBuilder
+	// WithType is the type of the maintenance window to return.
+	// If `Unknown` or missing, all maintenance windows are returned.
+	WithType(windowType string) MaintenanceWindowQueryBuilder
 }
 
-func newMaintenanceWindowQueryBuilder(client *dtapi.APIClient) *MaintenanceWindowQueryBuilder {
-	builder := MaintenanceWindowQueryBuilder{}
-	builder.client = client
-	return &builder
-}
-
-// GET TODO: documentation
-func (builder *MaintenanceWindowQueryBuilder) GET() ([]dtapi.MaintenanceWindow, error) {
-	result, _, err := builder.client.MaintenanceWindowApi.GetAllMaintenanceWindowConfigs(nil, &builder.opts)
-	return result, err
-}
-
-// WithStartTimeStamp TODO: documentation
-func (builder *MaintenanceWindowQueryBuilder) WithStartTimeStamp(timeStamp int64) *MaintenanceWindowQueryBuilder {
-	builder.opts.From = optional.NewInt64(timeStamp)
-	return builder
-}
-
-// WithEndTimeStamp TODO: documentation
-func (builder *MaintenanceWindowQueryBuilder) WithEndTimeStamp(timeStamp int64) *MaintenanceWindowQueryBuilder {
-	builder.opts.To = optional.NewInt64(timeStamp)
-	return builder
-}
-
-// WithType TODO: documentation
-func (builder *MaintenanceWindowQueryBuilder) WithType(windowType string) *MaintenanceWindowQueryBuilder {
-	builder.opts.Type_ = optional.NewString(windowType)
-	return builder
-}
-
-// BuildQuery TODO: documentation
-func (api MaintenanceWindowAPI) BuildQuery() *MaintenanceWindowQueryBuilder {
+// NewQuery produces a builder for a parameterizable query for Maintenance Windows
+func (api MaintenanceWindowAPI) NewQuery() MaintenanceWindowQueryBuilder {
 	return newMaintenanceWindowQueryBuilder(api.client)
 }
 
-// ALL TODO: documentation
-func (api MaintenanceWindowAPI) ALL() ([]dtapi.MaintenanceWindow, error) {
+// All retrieves the configurations of all currently configured Maintenance Windows
+func (api MaintenanceWindowAPI) All() ([]dtapi.MaintenanceWindow, error) {
 	result, _, err := api.client.MaintenanceWindowApi.GetAllMaintenanceWindowConfigs(nil, &dtapi.GetAllMaintenanceWindowConfigsOpts{})
 	return result, err
 }
 
-// GET TODO: documentation
-func (api MaintenanceWindowAPI) GET(uid string) (dtapi.MaintenanceWindow, error) {
+// Get retrieves the configuration of a specific Maintenance Window
+func (api MaintenanceWindowAPI) Get(uid string) (dtapi.MaintenanceWindow, error) {
 	result, _, err := api.client.MaintenanceWindowApi.GetMaintenanceWindowConfig(nil, uid)
 	return result, err
 }
 
-// DELETE TODO: documentation
-func (api MaintenanceWindowAPI) DELETE(uid string) error {
+// Delete deletes a specified maintenance window.
+// Deletion cannot be undone.
+func (api MaintenanceWindowAPI) Delete(uid string) error {
 	_, err := api.client.MaintenanceWindowApi.RemoveMaintenanceWindowConfig(nil, uid)
 	return err
 }
 
-// STORE TODO: documentation
-func (api MaintenanceWindowAPI) STORE(maintenanceWindow dtapi.MaintenanceWindow) error {
+// Store creates a new or updates an existing maintenance window.
+func (api MaintenanceWindowAPI) Store(maintenanceWindow dtapi.MaintenanceWindow) error {
 	_, err := api.client.MaintenanceWindowApi.StoreMaintenanceWindowConfig(nil, &dtapi.StoreMaintenanceWindowConfigOpts{
 		MaintenanceWindow: optional.NewInterface(maintenanceWindow),
 	})
 	return err
+}
+
+type maintenanceWindowQueryBuilder struct {
+	MaintenanceWindowQueryBuilder
+	client *dtapi.APIClient
+	opts   dtapi.GetAllMaintenanceWindowConfigsOpts
+}
+
+func newMaintenanceWindowQueryBuilder(client *dtapi.APIClient) MaintenanceWindowQueryBuilder {
+	builder := maintenanceWindowQueryBuilder{}
+	builder.client = client
+	return &builder
+}
+
+func (builder *maintenanceWindowQueryBuilder) Get() ([]dtapi.MaintenanceWindow, error) {
+	result, _, err := builder.client.MaintenanceWindowApi.GetAllMaintenanceWindowConfigs(nil, &builder.opts)
+	builder.opts = dtapi.GetAllMaintenanceWindowConfigsOpts{}
+	return result, err
+}
+
+func (builder *maintenanceWindowQueryBuilder) WithStartTimeStamp(timeStamp int64) MaintenanceWindowQueryBuilder {
+	builder.opts.From = optional.NewInt64(timeStamp)
+	return builder
+}
+
+func (builder *maintenanceWindowQueryBuilder) WithEndTimeStamp(timeStamp int64) MaintenanceWindowQueryBuilder {
+	builder.opts.To = optional.NewInt64(timeStamp)
+	return builder
+}
+
+func (builder *maintenanceWindowQueryBuilder) WithType(windowType string) MaintenanceWindowQueryBuilder {
+	builder.opts.Type_ = optional.NewString(windowType)
+	return builder
 }

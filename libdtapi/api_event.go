@@ -41,55 +41,78 @@ func (api *EventAPI) QueryEvents() (dtapi.EventQueryResult, error) {
 	return api.CreateQuery().QueryEvents()
 }
 
+// QueryEventsBuilder is a convenience object to set
+// optional parameters for an even query.
+type QueryEventsBuilder interface {
+	// WithStartTimeStamp specifies the end timestamp in milliseconds since Unix epoch
+	WithStartTimeStamp(timeStamp int64) QueryEventsBuilder
+	// WithEndTimeStamp specifies the end timestamp in milliseconds since Unix epoch.
+	// If not specified, the default timeframe is the last 30 days
+	WithEndTimeStamp(timeStamp int64) QueryEventsBuilder
+	// WithRelativeTime is the relative timeframe, back from the current time.
+	WithRelativeTime(relativeTime string) QueryEventsBuilder
+	// WithEventType filters the event feed based on a specific event type
+	WithEventType(eventType string) QueryEventsBuilder
+	// WithEntityID if specified, it means to only receive events for a given monitored entity, such as a host, process, or service
+	WithEntityID(entityID string) QueryEventsBuilder
+	// WithCursor If a query returns a cursor string this string can be used to fetch the next 150 events of a query.
+	// Note that there is no need to specify additional parameters (for instance eventType, from or to) as the cursor string already contains all these parameters
+	WithCursor(cursor string) QueryEventsBuilder
+	// QueryEvents queries for events based on the parameterization previously defined
+	// via 'WithStartTimeStamp', 'WithEndTimeStamp, 'WithRelativeTime', 'WithEventType', 'WithEntityID' and 'WithCursor'.
+	QueryEvents() (dtapi.EventQueryResult, error)
+}
+
 // queryEventsBuilder is a convenience object to set
 // optional parameters for an even query.
 type queryEventsBuilder struct {
+	QueryEventsBuilder
 	client *dtapi.APIClient
 	opts   *dtapi.QueryEventsOpts
 }
 
 // CreateQuery creates a Builder object to conveniently set
 // optional parameters for an event query.
-func (api EventAPI) CreateQuery() *queryEventsBuilder {
+func (api EventAPI) CreateQuery() QueryEventsBuilder {
 	builder := queryEventsBuilder{}
 	builder.client = api.client
 	return &builder
 }
 
 // WithStartTimeStamp specifies the end timestamp in milliseconds since Unix epoch
-func (builder *queryEventsBuilder) WithStartTimeStamp(timeStamp int64) *queryEventsBuilder {
+func (builder *queryEventsBuilder) WithStartTimeStamp(timeStamp int64) QueryEventsBuilder {
 	builder.opts.From = optional.NewInt64(timeStamp)
 	return builder
 }
 
 // WithEndTimeStamp specifies the end timestamp in milliseconds since Unix epoch.
 // If not specified, the default timeframe is the last 30 days
-func (builder *queryEventsBuilder) WithEndTimeStamp(timeStamp int64) *queryEventsBuilder {
+func (builder *queryEventsBuilder) WithEndTimeStamp(timeStamp int64) QueryEventsBuilder {
 	builder.opts.To = optional.NewInt64(timeStamp)
 	return builder
 }
 
 // WithRelativeTime is the relative timeframe, back from the current time.
-func (builder *queryEventsBuilder) WithRelativeTime(relativeTime string) *queryEventsBuilder {
+func (builder *queryEventsBuilder) WithRelativeTime(relativeTime string) QueryEventsBuilder {
 	builder.opts.RelativeTime = optional.NewString(relativeTime)
 	return builder
 }
 
 // WithEventType filters the event feed based on a specific event type
-func (builder *queryEventsBuilder) WithEventType(eventType string) *queryEventsBuilder {
+func (builder *queryEventsBuilder) WithEventType(eventType string) QueryEventsBuilder {
 	builder.opts.EventType = optional.NewString(eventType)
 	return builder
 }
 
 // WithEntityID if specified, it means to only receive events for a given monitored entity, such as a host, process, or service
-func (builder *queryEventsBuilder) WithEntityID(entityID string) *queryEventsBuilder {
+func (builder *queryEventsBuilder) WithEntityID(entityID string) QueryEventsBuilder {
 	builder.opts.EntityId = optional.NewString(entityID)
 	return builder
 }
 
 // WithCursor If a query returns a cursor string this string can be used to fetch the next 150 events of a query.
 // Note that there is no need to specify additional parameters (for instance eventType, from or to) as the cursor string already contains all these parameters
-func (builder *queryEventsBuilder) WithCursor(cursor string) *queryEventsBuilder {
+func (builder *queryEventsBuilder) WithCursor(cursor string) QueryEventsBuilder {
 	builder.opts.Cursor = optional.NewString(cursor)
 	return builder
 }

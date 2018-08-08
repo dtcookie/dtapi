@@ -4,34 +4,27 @@ import (
 	dtapi "github.com/dtcookie/dtapi/libdtapienv"
 )
 
-// SyntheticAPI TODO: documentation
+// SyntheticAPI is a convenience wrapper around
+// the Services offered via
+// "github.com/dtcookie/dtapi/libdtapienv" related to
+// configuring the Synthetic API
 type SyntheticAPI envService
 
-/*
-PushEvents Push information about external Synthetic Events
- * @param externalSyntheticEvents
-*/
+// PushEvents pushes updates on open events to Dynatrace or closes previously open events.
 func (api SyntheticAPI) PushEvents(externalSyntheticEvents dtapi.ExternalSyntheticEvents) error {
 	_, err := api.client.SyntheticApi.PushEvents(nil, externalSyntheticEvents)
 	return err
 }
 
-/*
-PushStateModification Modify the operation state of all external monitors
- * @param optional nil or *PushStateModificationOpts - Optional Parameters:
- * @param "StateModification" (optional.Interface of StateModification) -
-@return string
-*/
-func (api SyntheticAPI) PushStateModification(opts dtapi.StateModification) (string, error) {
-	result, _, err := api.client.SyntheticApi.PushStateModification(nil, opts)
+// PushStateModification modifies the operation state of all external monitors
+func (api SyntheticAPI) PushStateModification(state string) (string, error) {
+	result, _, err := api.client.SyntheticApi.PushStateModification(nil, dtapi.StateModification{
+		State: state,
+	})
 	return result, err
 }
 
-/*
-TestResults Push Information about Synthetic Tests, Locations and Test Results.
- * @param externalSyntheticTests Information about Synthetic Tests, Locations and Test Results.
-@return string
-*/
+// TestResults pushes information about external Synthetic tests, locations, and test results to Dynatrace.
 func (api SyntheticAPI) TestResults(externalSyntheticTests dtapi.ExternalSyntheticTests) (string, error) {
 	result, _, err := api.client.SyntheticApi.TestResults(nil, externalSyntheticTests)
 	return result, err
