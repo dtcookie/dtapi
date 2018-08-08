@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
 	"github.com/antihax/optional"
 )
 
@@ -33,12 +32,12 @@ ApplicationDetectionConfigApiService Lists all available application detection r
 */
 func (a *ApplicationDetectionConfigApiService) GetConfiguration(ctx context.Context) (ApplicationDetectionConfig, *http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Get")
+		localVarHttpMethod = strings.ToUpper("Get")
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
 		localVarFileBytes    []byte
-		localVarReturnValue  ApplicationDetectionConfig
+		localVarReturnValue ApplicationDetectionConfig
 	)
 
 	// create path and map variables
@@ -96,7 +95,7 @@ func (a *ApplicationDetectionConfigApiService) GetConfiguration(ctx context.Cont
 
 	if localVarHttpResponse.StatusCode < 300 {
 		// If we succeed, return the data, otherwise pass on to decode error.
-		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
+		err = a.client.decode(&localVarReturnValue, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
 		if err == nil {
 			return localVarReturnValue, localVarHttpResponse, err
 		}
@@ -104,18 +103,18 @@ func (a *ApplicationDetectionConfigApiService) GetConfiguration(ctx context.Cont
 
 	if localVarHttpResponse.StatusCode >= 300 {
 		newErr := GenericOpenAPIError{
-			body:  localVarBody,
+			body: localVarBody,
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 200 {
 			var v ApplicationDetectionConfig
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
+				if err != nil {
+					newErr.error = err.Error()
+					return localVarReturnValue, localVarHttpResponse, newErr
+				}
+				newErr.model = v
 				return localVarReturnValue, localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarReturnValue, localVarHttpResponse, newErr
 		}
 		return localVarReturnValue, localVarHttpResponse, newErr
 	}
@@ -128,16 +127,16 @@ ApplicationDetectionConfigApiService Updates an application detection configurat
 All the application detection rules are stored in a single configuration. When you want to edit a rule or create a new one, you have to put **all** existing rules in the request body, otherwise you&#39;ll lose them. Execute the &#x60;GET /applicationDetection&#x60; request to view the list of existing rules. Then modify an existing rule or add a new one, and keep the rest of the rules as they are.   The order of rules is important. Dynatrace evaluates rules from top to bottom. To add a new rule to the configuration, execute the &#x60;GET /applicationDetection&#x60; request, and place the new rule in the required position among the existing rules.    Validate the configuration with the &#x60;POST /validator&#x60; request before submitting it.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param optional nil or *UpdateConfigurationOpts - Optional Parameters:
- * @param "ApplicationDetectionConfig" (optional.Interface of ApplicationDetectionConfig) -
+ * @param "ApplicationDetectionConfig" (optional.Interface of ApplicationDetectionConfig) - 
 */
 
 type UpdateConfigurationOpts struct {
-	ApplicationDetectionConfig optional.Interface
+    ApplicationDetectionConfig optional.Interface
 }
 
 func (a *ApplicationDetectionConfigApiService) UpdateConfiguration(ctx context.Context, localVarOptionals *UpdateConfigurationOpts) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Put")
+		localVarHttpMethod = strings.ToUpper("Put")
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -208,18 +207,18 @@ func (a *ApplicationDetectionConfigApiService) UpdateConfiguration(ctx context.C
 
 	if localVarHttpResponse.StatusCode >= 300 {
 		newErr := GenericOpenAPIError{
-			body:  localVarBody,
+			body: localVarBody,
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 400 {
 			var v ErrorEnvelope
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
+				if err != nil {
+					newErr.error = err.Error()
+					return localVarHttpResponse, newErr
+				}
+				newErr.model = v
 				return localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarHttpResponse, newErr
 		}
 		return localVarHttpResponse, newErr
 	}
@@ -231,16 +230,16 @@ func (a *ApplicationDetectionConfigApiService) UpdateConfiguration(ctx context.C
 ApplicationDetectionConfigApiService Validates the application detection configuration for the `PUT /applicationDetection` request.
  * @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  * @param optional nil or *ValidateConfigurationOpts - Optional Parameters:
- * @param "ApplicationDetectionConfig" (optional.Interface of ApplicationDetectionConfig) -
+ * @param "ApplicationDetectionConfig" (optional.Interface of ApplicationDetectionConfig) - 
 */
 
 type ValidateConfigurationOpts struct {
-	ApplicationDetectionConfig optional.Interface
+    ApplicationDetectionConfig optional.Interface
 }
 
 func (a *ApplicationDetectionConfigApiService) ValidateConfiguration(ctx context.Context, localVarOptionals *ValidateConfigurationOpts) (*http.Response, error) {
 	var (
-		localVarHttpMethod   = strings.ToUpper("Post")
+		localVarHttpMethod = strings.ToUpper("Post")
 		localVarPostBody     interface{}
 		localVarFormFileName string
 		localVarFileName     string
@@ -311,18 +310,18 @@ func (a *ApplicationDetectionConfigApiService) ValidateConfiguration(ctx context
 
 	if localVarHttpResponse.StatusCode >= 300 {
 		newErr := GenericOpenAPIError{
-			body:  localVarBody,
+			body: localVarBody,
 			error: localVarHttpResponse.Status,
 		}
 		if localVarHttpResponse.StatusCode == 400 {
 			var v ErrorEnvelope
-			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
+			err = a.client.decode(&v, localVarBody, localVarHttpResponse.Header.Get("Content-Type"));
+				if err != nil {
+					newErr.error = err.Error()
+					return localVarHttpResponse, newErr
+				}
+				newErr.model = v
 				return localVarHttpResponse, newErr
-			}
-			newErr.model = v
-			return localVarHttpResponse, newErr
 		}
 		return localVarHttpResponse, newErr
 	}
