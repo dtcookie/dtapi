@@ -33,7 +33,7 @@ func (api TopologyApplicationAPI) Get(ID string) (dtapi.Application, error) {
 }
 
 // Update updates parameters of the specified application
-func (api TopologyApplicationAPI) Update(ID string, tags []string) error {
+func (api TopologyApplicationAPI) Update(ID string, tags ...string) error {
 	_, err := api.client.TopologySmartscapeApplicationApi.UpdateApplication(nil, ID, &dtapi.UpdateApplicationOpts{
 		UpdateEntity: optional.NewInterface(dtapi.UpdateEntity{
 			Tags: tags,

@@ -18,6 +18,7 @@ type Tenant struct {
 	RequestAttributes    *RequestAttributesAPI
 	UserSessionQL        *UserSessionQLAPI
 	WebApplications      *WebApplicationConfigAPI
+	AutoTagsAPI          *AutoTagsAPI
 }
 
 // NewTenant TODO: comment
@@ -42,6 +43,9 @@ func NewTenant(environment string, apiToken string) *Tenant {
 	return &Tenant{
 		Cluster: &ClusterAPI{
 			client: envClient,
+		},
+		AutoTagsAPI: &AutoTagsAPI{
+			client: confClient,
 		},
 		Anonymization: &anonymization,
 		Events: &EventAPI{

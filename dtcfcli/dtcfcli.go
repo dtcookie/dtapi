@@ -2,12 +2,15 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 
+	"code.cloudfoundry.org/cli/cf/manifest"
 	"code.cloudfoundry.org/cli/plugin"
 	dtcmd "github.com/dtcookie/dtapi/libdtcmd"
 	log "github.com/dtcookie/dtapi/libdtlog"
 	"github.com/fatih/color"
+	"gopkg.in/yaml.v2"
 )
 
 // Version is the version of the plugin.
@@ -118,6 +121,195 @@ func (c *CfCliDynatrace) DeleteWebApplication(args []string) bool {
 	return true
 }
 
+type Manifest struct {
+	Applications []manifest.Application `yaml:"applications,omitempty"`
+}
+
+func contains(slice []string, item string) bool {
+	for _, elem := range slice {
+		if elem == item {
+			return true
+		}
+	}
+	return false
+}
+
+func handleAppStrProp(k string, v interface{}) {
+	switch k {
+	case "memory":
+		fmt.Println(k + " found")
+	case "name":
+		fmt.Println(k + " found")
+	case "path":
+		fmt.Println(k + " found")
+	case "random-route":
+		fmt.Println(k + " found")
+	case "services":
+		fmt.Println(k + " found")
+	default:
+		fmt.Println(k + " ignored")
+		return
+	}
+}
+
+func handleAppProp(k interface{}, v interface{}) {
+	switch tk := k.(type) {
+	case string:
+		handleAppStrProp(tk, v)
+	default:
+		return
+	}
+}
+
+func handleApplication(v interface{}) {
+	switch a := v.(type) {
+	case map[interface{}]interface{}:
+		for k, v := range a {
+			handleAppProp(k, v)
+		}
+	default:
+		fmt.Printf("unexpected type %T\n", a)
+		return
+	}
+
+}
+
+func handleApplications(v interface{}) {
+	switch a := v.(type) {
+	case []interface{}:
+		for i := range a {
+			handleApplication(a[i])
+		}
+	default:
+		return
+	}
+}
+
+func handleManifestStrProp(k string, v interface{}) {
+	switch k {
+	case "applications":
+		handleApplications(v)
+	default:
+		return
+	}
+}
+
+func handleManifestProp(k interface{}, v interface{}) {
+	switch tk := k.(type) {
+	case string:
+		handleManifestStrProp(tk, v)
+	default:
+		return
+	}
+}
+
+func cast(v interface{}) map[interface{}][]interface{} {
+	switch w := v.(type) {
+	case map[interface{}][]interface{}:
+		return w
+	default:
+		fmt.Println(fmt.Sprintf("unknown %T", w))
+		return nil
+	}
+}
+
+func (c *CfCliDynatrace) Push(cli plugin.CliConnection, args []string) bool {
+	var err error
+	var output []string
+	var pushArguments *PushArguments
+	// var mani *manifest.Manifest
+
+	// var userGUID string
+
+	// if userGUID, err = cli.UserGuid(); err != nil {
+	// 	log.FailError(err)
+	// 	return false
+	// }
+
+	// metaDataServiceName := "dynatrace-metadata-" + userGUID
+	if pushArguments, err = ParsePushFlags(args); err != nil {
+		log.FailError(err)
+		return false
+	}
+
+	var bytes []byte
+
+	if bytes, err = ioutil.ReadFile(pushArguments.Manifest); err != nil {
+		log.FailError(err)
+		return false
+	}
+
+	// var mani Manifest
+	mmap := make(map[interface{}]interface{})
+
+	if err = yaml.Unmarshal(bytes, &mmap); err != nil {
+		log.FailError(err)
+		return false
+	}
+
+	applications := cast(mmap["applications"])
+
+	//var application map[interface{}]interface{}
+	for k, application := range applications {
+		fmt.Println(fmt.Sprintf("key: %s", k))
+		fmt.Println(fmt.Sprintf("val: %s", application))
+	}
+
+	return true
+
+	// for k, v := range mmap {
+	// 	handleManifestProp(k, v)
+	// }
+
+	// var applications []manifest.Application
+	// applications = mani.Applications
+	// var application *manifest.Application
+	// for i := range applications {
+	// 	application = &applications[i]
+	// 	if !contains(application.Services, metaDataServiceName) {
+	// 		application.Services = append(application.Services, metaDataServiceName)
+	// 	}
+	// }
+	if bytes, err = yaml.Marshal(mmap); err != nil {
+		log.FailError(err)
+		return false
+	}
+	fmt.Println(string(bytes))
+
+	// str := string(b) // convert content to a 'string'
+
+	// fmt.Println(str) // print the content as a 'string'
+
+	return true
+
+	pushArgs := append(args, "push")
+	if output, err = cli.CliCommand(pushArgs...); err != nil {
+		log.FailError(err)
+		return false
+	}
+	for _, line := range output {
+		fmt.Println(line)
+	}
+	return true
+	// var err error
+	// var tenant *dtcmd.Tenant
+	// var params *PCFDomainParams
+
+	// if params = NewPCFDomainParams(cli, args); params == nil {
+	// 	return false
+	// }
+
+	// if tenant, err = NewTenantPCF(params.Credentials, params.PCF, false); err != nil {
+	// 	return log.FailError(err)
+	// }
+
+	// if _, err = tenant.BindWebApplication(params.WebAppName, params.Domains, params.PCF.User); err != nil {
+	// 	return log.FailError(err)
+	// }
+
+	return true
+}
+
 // Bind creates or updates a Dynatrace Web Application based on the
 // routes a PCF Application can get reached at.
 //
@@ -143,7 +335,7 @@ func (c *CfCliDynatrace) Bind(cli plugin.CliConnection, args []string) bool {
 		return log.FailError(err)
 	}
 
-	if _, err = tenant.BindWebApplication(params.WebAppName, params.Domains); err != nil {
+	if _, err = tenant.BindWebApplication(params.WebAppName, params.Domains, params.PCF.User); err != nil {
 		return log.FailError(err)
 	}
 
@@ -229,6 +421,8 @@ func (c *CfCliDynatrace) Run(cliConnection plugin.CliConnection, args []string) 
 		isOk = c.DeleteWebApplication(args)
 	case "list":
 		isOk = c.ListWebApplications(args)
+	case "push":
+		isOk = c.Push(cliConnection, args)
 	default:
 		log.Println("Incorrect Usage: the required argument <operation> was not provided")
 		log.Println("   Valid argument values for the operation are: ", log.Cyan("bind"), " | ", log.Cyan("unbind"), " | ", log.Cyan("delete"), " | ", log.Cyan("list"))
@@ -246,26 +440,43 @@ func (c *CfCliDynatrace) Run(cliConnection plugin.CliConnection, args []string) 
 
 // GetMetadata Metadata about the plugin
 func (c *CfCliDynatrace) GetMetadata() plugin.PluginMetadata {
+	// usage := []string{
+	// 	"cf dynatrace bind <app> [-name <webapp>] [-environment <environmentID>] [-api-token <api-token>]",
+	// 	"         to create or update a web application in dynatrace to cover the routes of the given cloudfoundry application",
+	// 	"      where",
+	// 	"         <app>    is the name of an application deployed in cloudfoundry",
+	// 	"         <webapp> is the name of the web application in dynatrace to create of update",
+	// 	"            which may optionally contain the placeholders '{cf:app}', '{cf:space}' and '{cf:org}'",
+	// 	"            referring to the cloudfoundry application, space and org",
+	// 	"   cf dynatrace unbind <app> [-name <webapp>] [-environment <environmentID>] [-api-token <api-token>]",
+	// 	"         to remove the application detection rule that binds the given web application to the given route",
+	// 	"      where",
+	// 	"         <app>    is the name of an application deployed in cloudfoundry",
+	// 	"         <webapp> is the name of the web application in dynatrace to create of update",
+	// 	"            which may optionally contain the placeholders '{cf:app}', '{cf:space}' and '{cf:org}'",
+	// 	"            referring to the cloudfoundry application, space and org",
+	// 	"   cf dynatrace delete <webapp> [-environment <environmentID>] [-api-token <api-token>]",
+	// 	"      where <webapp> is a web application in dynatrace",
+	// 	"   cf dynatrace list [-environment <environmentID>] [-api-token <api-token>]",
+	// }
 	usage := []string{
-		"cf dynatrace bind <app> [-name <webapp>] [-environment <environmentID>] [-api-token <api-token>]",
-		"         to create or update a web application in dynatrace to cover the routes of the given cloudfoundry application",
-		"      where",
-		"         <app>    is the name of an application deployed in cloudfoundry",
-		"         <webapp> is the name of the web application in dynatrace to create of update",
-		"            which may optionally contain the placeholders '{cf:app}', '{cf:space}' and '{cf:org}'",
-		"            referring to the cloudfoundry application, space and org",
+		"",
+		"   cf dynatrace bind <app> [-name <webapp>] [-environment <environmentID>] [-api-token <api-token>]",
+		"     to create or update a web application in dynatrace to cover the routes of the given cloudfoundry application",
+		"",
 		"   cf dynatrace unbind <app> [-name <webapp>] [-environment <environmentID>] [-api-token <api-token>]",
-		"         to remove the application detection rule that binds the given web application to the given route",
-		"      where",
-		"         <app>    is the name of an application deployed in cloudfoundry",
-		"         <webapp> is the name of the web application in dynatrace to create of update",
-		"            which may optionally contain the placeholders '{cf:app}', '{cf:space}' and '{cf:org}'",
-		"            referring to the cloudfoundry application, space and org",
+		"     to remove the application detection rule that binds the given web application to the given route",
+		"",
 		"   cf dynatrace delete <webapp> [-environment <environmentID>] [-api-token <api-token>]",
-		"      where <webapp> is a web application in dynatrace",
+		"     to delete a web application (including the application detection rules)",
+		"",
 		"   cf dynatrace list [-environment <environmentID>] [-api-token <api-token>]",
+		"     to list the currently configured web applications",
+		"",
+		"   The arguments -environment and -api-token are optional if the environment variables",
+		"       DT_ENVIRONMENT and DT_APITOKEN",
+		"   are defined.",
 	}
-
 	usageStr := strings.Join(usage, "\n")
 
 	return plugin.PluginMetadata{

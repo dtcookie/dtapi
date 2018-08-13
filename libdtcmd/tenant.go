@@ -5,6 +5,7 @@ import (
 
 	dtapi "github.com/dtcookie/dtapi/libdtapi"
 	dtapiconf "github.com/dtcookie/dtapi/libdtapiconf"
+	dtapienv "github.com/dtcookie/dtapi/libdtapienv"
 	log "github.com/dtcookie/dtapi/libdtlog"
 )
 
@@ -47,6 +48,23 @@ func NewTenant(credentials Credentials) *Tenant {
 	tenant.webApplications = &webAppAPI
 
 	return &tenant
+}
+
+// TagApplication tags an application with a manual tag - mirroring
+// the owner as the current user.
+func (tenant *Tenant) TagApplication(ID string, user string) error {
+	var err error
+	var application dtapienv.Application
+	if application, err = tenant.base.Topology.Applications.Get(ID); err != nil {
+		return err
+	}
+	for _, tagInfo := range application.Tags {
+		if tagInfo.Key == ("owner:" + user) {
+			return nil
+		}
+	}
+
+	return tenant.base.Topology.Applications.Update(ID, "owner:"+user)
 }
 
 // PrintClusterVersion prints out the cluster version of
@@ -117,9 +135,10 @@ func (tenant *Tenant) UnBindWebApplication(name string, domains []string) (bool,
 //	- webAppName	the name of the Web Application. Its identifier will get resolved
 //					internally based on that name
 //	- domains		the domains to cover with the newly created application detection rules
+//	- user			a user name to tag the application with
 // Returns:
 //	- bool	'true' if there was an update necessary, 'false' otherwise
-func (tenant *Tenant) BindWebApplication(webAppName string, domains []string) (bool, error) {
+func (tenant *Tenant) BindWebApplication(webAppName string, domains []string, user string) (bool, error) {
 	var err error
 
 	var webAppConfig dtapiconf.WebApplicationConfig
@@ -156,7 +175,7 @@ func (tenant *Tenant) BindWebApplication(webAppName string, domains []string) (b
 
 	if !foundConfig {
 		tenant.ActivityCallback.OnCreateWebApp(webAppName)
-		if webAppConfig, err = tenant.webApplications.createFromDefault(webAppName); err != nil {
+		if webAppConfig, err = tenant.webApplications.createFromDefault(webAppName, user); err != nil {
 			return false, err
 		}
 	} else {
@@ -165,8 +184,11 @@ func (tenant *Tenant) BindWebApplication(webAppName string, domains []string) (b
 		}
 	}
 
-	ok, err = tenant.applicationDetection.bindDomains(webAppConfig.Identifier, appDetectionConfig, domains)
-	return true, err
+	if ok, err = tenant.applicationDetection.bindDomains(webAppConfig.Identifier, appDetectionConfig, domains); err != nil {
+		return ok, err
+	}
+	err = tenant.TagApplication(webAppConfig.Identifier, user)
+	return ok, err
 }
 
 // resolveWebAppID provides the identifier of a Web Application

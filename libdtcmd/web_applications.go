@@ -186,10 +186,11 @@ func (api *webApplicationAPI) enableRUM(webAppConfig dtapiconf.WebApplicationCon
 //
 // Parameters:
 //	- name	the name of the new Web Application
+//	- user	a user name to tag the application with
 // Returns:
 //	- WebApplicationConfig	the configuration of the Web Application that has been
 //							created.
-func (api *webApplicationAPI) createFromDefault(name string) (dtapiconf.WebApplicationConfig, error) {
+func (api *webApplicationAPI) createFromDefault(name string, user string) (dtapiconf.WebApplicationConfig, error) {
 	var webAppConfig dtapiconf.WebApplicationConfig
 	var err error
 	if webAppConfig, err = api.base.Default.Get(); err != nil {
